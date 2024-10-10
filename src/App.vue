@@ -1,26 +1,41 @@
+<!-- src/App.vue -->
+
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div id="app">
+    <ExcelFileFetcher @dataFetched="handleDataFetched" />
+    <SmartleadCampaign
+      v-if="excelData && excelData.length"
+      :campaignData="excelData"
+    />
+  </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import { ref } from "vue";
+import ExcelFileFetcher from "./components/ExcelFileFetcher.vue";
+import SmartleadCampaign from "./components/SmartleadCampaign.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
-    HelloWorld
-  }
-}
+    ExcelFileFetcher,
+    SmartleadCampaign,
+  },
+  setup() {
+    const excelData = ref(null);
+
+    const handleDataFetched = (data) => {
+      excelData.value = data;
+    };
+
+    return {
+      excelData,
+      handleDataFetched,
+    };
+  },
+};
 </script>
 
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+<style scoped>
+/* Add your styles here */
 </style>
