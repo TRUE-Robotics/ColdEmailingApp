@@ -21,14 +21,20 @@ export default {
       type: Array,
       required: true,
     },
+    clientId: {
+      type: Number,
+      default: null, // Optional prop if you have a client_id
+    },
   },
   setup(props) {
     const successMessage = ref("");
     const errorMessage = ref("");
     const campaignCreated = ref(false);
 
-    // Remove API_KEY from frontend; it should be handled on the server side.
-    // const API_KEY = process.env.VUE_APP_SMARTLEAD_API_KEY;
+    // Define the wait function inside setup
+    const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    
+    const SMARTLEAD_API_KEY = process.env.VUE_APP_SMARTLEAD_API_KEY;
 
     const createCampaign = async () => {
       try {
@@ -39,28 +45,66 @@ export default {
 
         // Prepare the campaign data according to the new API requirements
         const campaignPayload = {
-          // Update property names and structure as needed
           name: "Cold Email Campaign",
-          // Include additional required fields as per the new documentation
+          client_id: props.clientId,
           leads: props.campaignData.map((row) => ({
             first_name: row.Name,
             last_name: row.LastName || "",
             email: row.Email,
-            // Include any other required fields
             custom_fields: {
               // Add custom fields if applicable
             },
           })),
         };
 
-        // Send request to your backend server
-        const response = await axios.post(
-          "http://localhost:3000/api/create-campaign",
-          campaignPayload
-        );
+        //Step 1: Create the campsign
+        const createCampaignUrl = `https://server.smartlead.ai/api/v1/campaigns/create?api_key=${SMARTLEAD_API_KEY}`;
 
-        successMessage.value = response.data.message;
+        const createCampaignResponse = await axios.post(
+              createCampaignUrl,
+              {
+                  name: campaignPayload.name || 'Cold Email Campaign',
+                  client_id: campaignPayload.client_id || null, // Include client_id if applicable
+              },
+              {
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+              }
+          );
+
+        const campaignId = createCampaignResponse.data.id;
+
+        console.log(`Campaign created with ID: ${campaignId}`);
+        
+        //Step 2: Add leads to the created campaign
+        await wait(2000);
+        const addLeadsUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads?api_key=${SMARTLEAD_API_KEY}`;
+
+        const leadsPayload = {
+            lead_list: campaignPayload.leads,
+            settings: {
+                ignore_global_block_list: true,
+                ignore_unsubscribe_list: true,
+                ignore_duplicate_leads_in_other_campaign: false,
+            },
+        };
+
+        const addLeadsResponse = await axios.post(addLeadsUrl, leadsPayload, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        console.log('Leads added to campaign:', addLeadsResponse.data);
+
+        // res.json({
+        //     message: `Campaign created with ID ${campaignId} and leads added successfully.`,
+        // });
+
+        //successMessage.value = response.data.message;
         campaignCreated.value = true;
+
       } catch (error) {
         console.error(
           "Error creating campaign:",
