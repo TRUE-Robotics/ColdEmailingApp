@@ -1,34 +1,91 @@
 <template>
   <div>
     <!-- Log Message-->
+    <h3>Logger</h3>
     <div v-if="logMessage">{{ logMessage }}</div>
 
     <!-- Button to create campaign and import leads -->
+
+    <h3 v-if="!campaignCreated"> Create Campaign </h3>
     <button v-if="!campaignCreated" @click="createCampaign">
       Create New Campaign and Import Leads
     </button>
 
     <!-- Button to update leads if the campaign is already created -->
+    
+    <h3 v-if="campaignCreated"> Add Leads </h3>
     <button v-if="campaignCreated" @click="updateLeads">
       Import/Add Leads (Fetch Excel File Again First)
     </button>
 
     <!-- Pause/Resume Buttons for Campaign -->
+    <h3 v-if="campaignCreated"> Pause/Unpause Campaign </h3>
     <div v-if="campaignCreated" class="campaign-pause-resume-buttons">
       <button @click="pauseCampaign">Pause Campaign</button>
       <button @click="resumeCampaign">Resume Campaign</button>
     </div>
 
     <!-- Pause/Resume Buttons for Leads -->
+    <h3 v-if="campaignCreated"> Pause/Unpause All Leads </h3>
     <div v-if="campaignCreated" class="leads-pause-unpause-buttons">
       <button @click="pauseAllLeads">Pause All Leads</button>
       <button @click="resumeAllLeads">Resume All Leads</button>
     </div>
 
     <!-- Pause Specific Lead by Email -->
+    <h3 v-if="campaignCreated"> Pause Lead by Email </h3>
     <div v-if="campaignCreated">
       <input type="email" id="emailToPause" v-model="emailToPause" placeholder="Enter email for lead to pause" />
       <button @click="pauseLeadByEmail">Pause Lead by Email</button>
+    </div>
+
+    <!-- Sequence Input Fields -->
+    <div v-if="campaignCreated">
+      <h3>Add Sequence</h3>
+      <div v-for="(sequence, index) in sequences" :key="index">
+        <label>Sequence Number:</label>
+        <input type="number" v-model="sequence.seq_number" />
+
+        <label>Delay (in days):</label>
+        <input type="number" v-model="sequence.seq_delay_details.delay_in_days" />
+
+        <label>Subject:</label>
+        <input type="text" v-model="sequence.subject" />
+
+        <label>Email Body:</label>
+        <textarea v-model="sequence.email_body"></textarea>
+      </div>
+      <button @click="addSequence">Add Another Sequence</button>
+      <button @click="saveSequences">Save Sequences</button>
+    </div>
+
+    <!-- Update Campaign Schedule Section -->
+    <div v-if="campaignCreated">
+      <h3>Update Campaign Schedule</h3>
+
+      <!-- Form to update schedule -->
+      <label>Timezone:</label>
+      <input type="text" v-model="schedule.timezone" placeholder="America/Los_Angeles" />
+
+      <label>Days of the Week (0-6, Sunday-Saturday):</label>
+      <input type="text" v-model="schedule.days_of_the_week" placeholder="1,2,3" />
+
+      <label>Start Hour:</label>
+      <input type="time" v-model="schedule.start_hour" placeholder="09:00" />
+
+      <label>End Hour:</label>
+      <input type="time" v-model="schedule.end_hour" placeholder="18:00" />
+
+      <label>Min Time Between Emails (in minutes):</label>
+      <input type="number" v-model="schedule.min_time_btw_emails" />
+
+      <label>Max New Leads Per Day:</label>
+      <input type="number" v-model="schedule.max_new_leads_per_day" />
+
+      <label>Schedule Start Time:</label>
+      <input type="datetime-local" v-model="schedule.schedule_start_time" />
+
+      <button @click="updateSchedule">Update Schedule</button>
     </div>
 
   </div>
@@ -36,7 +93,7 @@
 
 <script>
 import { ref } from 'vue';
-import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, delay } from '@/utils/smartleadService';
+import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, saveCampaignSequence, updateCampaignSchedule, delay } from '@/utils/smartleadService';
 
 export default {
   name: 'SmartleadCampaign',
@@ -51,10 +108,27 @@ export default {
     },
   },
   setup(props) {
-    const logMessage = ref('');
+    const logMessage = ref('Hello!');
     const campaignCreated = ref(false);
     const campaignId = ref(null);
     const emailToPause = ref('');
+    const sequences = ref([
+      {
+        seq_number: 1,
+        seq_delay_details: { delay_in_days: 1 },
+        subject: '',
+        email_body: '',
+      }
+    ]);
+    const schedule = ref({
+      timezone: 'America/Detroit',
+      days_of_the_week: [1,2,3],
+      start_hour: '09:00',
+      end_hour: '18:00',
+      min_time_btw_emails: 10,
+      max_new_leads_per_day: 20,
+      schedule_start_time: new Date().toISOString().slice(0,16),
+    });
 
     const createCampaignHandler = async () => {
       try {
@@ -261,6 +335,35 @@ export default {
       }
     };
 
+    const addSequence = () => {
+      sequences.value.push({
+        seq_number: sequences.value.length + 1,
+        seq_delay_details: { delay_in_days: 1 },
+        subject: '',
+        email_body: '',
+      });
+    };
+
+    const saveSequences = async () => {
+      try {
+        const sequencePayload = { sequences: sequences.value };
+        await saveCampaignSequence(campaignId.value, sequencePayload);
+        logMessage.value = 'Sequences saved successfully.';
+      } catch (error) {
+        logMessage.value = error.response?.data?.error || 'Error saving sequences.';
+      }
+    };
+
+    const updateSchedule = async () => {
+      try {
+        const schedulePayload = { ...schedule.value };
+        await updateCampaignSchedule(campaignId.value, schedulePayload);
+        logMessage.value = 'Schedule updated successfully!';
+      } catch (error) {
+        logMessage.value = error.response?.data?.error || 'Error updating schedule.';
+      }
+    };
+
     return {
       createCampaign: createCampaignHandler,
       updateLeads,
@@ -270,6 +373,11 @@ export default {
       resumeAllLeads,
       pauseLeadByEmail,
       emailToPause,
+      sequences,
+      addSequence,
+      saveSequences,
+      schedule,
+      updateSchedule,
       logMessage,
       campaignCreated,
     };

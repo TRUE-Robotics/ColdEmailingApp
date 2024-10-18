@@ -141,6 +141,52 @@ export const resumeLead = async (campaignId, leadId) => {
 };
 
 /**
+ * Save campaign sequence for a specific campaign.
+ * @param {number} campaignId - The ID of the campaign.
+ * @param {Object} sequencePayload - The payload containing sequence details.
+ * @returns {Promise<Object>} - The response from the API.
+ */
+export const saveCampaignSequence = async (campaignId, sequencePayload) => {
+  try {
+    const saveSequenceUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/sequences?api_key=${SMARTLEAD_API_KEY}`;
+    
+    const response = await axios.post(saveSequenceUrl, sequencePayload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data; // Return the data from the API response
+  } catch (error) {
+    console.error('Error saving campaign sequence:', error.response?.data || error.message);
+    throw error; // Propagate the error to be handled by the caller
+  }
+};
+
+/**
+ * Update the schedule for a specific campaign.
+ * @param {number} campaignId - The ID of the campaign.
+ * @param {Object} schedulePayload - The schedule payload with details.
+ * @returns {Promise<Object>} - The response from the API.
+ */
+export const updateCampaignSchedule = async (campaignId, schedulePayload) => {
+  try {
+    const updateScheduleUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/schedule?api_key=${SMARTLEAD_API_KEY}`;
+    
+    const response = await axios.post(updateScheduleUrl, schedulePayload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data; // Return the data from the API response
+  } catch (error) {
+    console.error('Error updating campaign schedule:', error.response?.data || error.message);
+    throw error; // Propagate the error to be handled by the caller
+  }
+};
+
+/**
  * Example utility function for delaying execution.
  * You can use this as needed in other functions.
  */
