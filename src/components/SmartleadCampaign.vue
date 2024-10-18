@@ -1,16 +1,30 @@
 <template>
   <div>
+    <!-- Log Message-->
+    <div v-if="logMessage">{{ logMessage }}</div>
+
+    <!-- Button to create campaign and import leads -->
     <button v-if="!campaignCreated" @click="createCampaign">
-      Create and Pause Campaign
+      Create New Campaign and Import Leads
     </button>
-    <div v-if="successMessage">{{ successMessage }}</div>
-    <div v-if="errorMessage">{{ errorMessage }}</div>
+
+    <!-- Button to update leads if the campaign is already created -->
+    <button v-if="campaignCreated" @click="updateLeads">
+      Update/Add Leads (Fetch Excel File Again)
+    </button>
+
+    <!-- Pause/Unpause Buttons -->
+    <div v-if="campaignCreated" class="pause-unpause-buttons">
+      <button @click="pauseCampaign">Pause Campaign</button>
+      <button @click="unpauseCampaign">Unpause Campaign</button>
+    </div>
+
   </div>
 </template>
 
 <script>
 import { ref } from 'vue';
-import { createCampaign, addLeadsToCampaign, delay } from '@/utils/smartleadService';
+import { createCampaign, addLeadsToCampaign, updateCampaignStatus, delay } from '@/utils/smartleadService';
 
 export default {
   name: 'SmartleadCampaign',
@@ -25,14 +39,14 @@ export default {
     },
   },
   setup(props) {
-    const successMessage = ref('');
-    const errorMessage = ref('');
+    const logMessage = ref('');
     const campaignCreated = ref(false);
+    const campaignId = ref(null);
 
     const createCampaignHandler = async () => {
       try {
         if (!props.campaignData || props.campaignData.length === 0) {
-          errorMessage.value = 'No data available to create campaign.';
+          logMessage.value = 'No data available to create campaign.';
           return;
         }
 
@@ -44,9 +58,9 @@ export default {
 
         // Call the service to create the campaign
         const campaignResponse = await createCampaign(campaignPayload);
-        const campaignId = campaignResponse.id;
+        campaignId.value = campaignResponse.id;
 
-        console.log(`Campaign created with ID: ${campaignId}`);
+        console.log(`Campaign created with ID: ${campaignId.value}`);
 
         // Prepare the payload for adding leads
         const leadsPayload = {
@@ -67,22 +81,93 @@ export default {
         await delay(2000);
 
         // Call the service to add leads
-        const addLeadsResponse = await addLeadsToCampaign(campaignId, leadsPayload);
+        const addLeadsResponse = await addLeadsToCampaign(campaignId.value, leadsPayload);
 
         console.log('Leads added to campaign:', addLeadsResponse);
 
-        successMessage.value = `Campaign created with ID ${campaignId} and leads added successfully.`;
+        logMessage.value = `Campaign created with ID ${campaignId.value} and leads added successfully.`;
         campaignCreated.value = true;
       } catch (error) {
         console.error('Error creating campaign or adding leads:', error);
-        errorMessage.value = error.response?.data?.error || 'Error creating campaign. Please try again.';
+        logMessage.value = error.response?.data?.error || 'Error creating campaign. Please try again.';
       }
     };
 
+    const updateLeads = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        // Prepare the payload for adding updated leads
+        const updatedLeadsPayload = {
+          lead_list: props.campaignData.map((row) => ({
+            first_name: row.Name,
+            last_name: row.LastName || '',
+            email: row.Email,
+            custom_fields: {},
+          })),
+          settings: {
+            ignore_global_block_list: true,
+            ignore_unsubscribe_list: true,
+            ignore_duplicate_leads_in_other_campaign: false,
+          },
+        };
+
+        // Call the service to update leads for the existing campaign
+        const updateLeadsResponse = await addLeadsToCampaign(campaignId.value, updatedLeadsPayload);
+
+        console.log('Leads updated in campaign:', updateLeadsResponse);
+
+        logMessage.value = `Leads successfully updated for campaign ID ${campaignId.value}.`;
+      } catch (error) {
+        console.error('Error updating leads:', error);
+        logMessage.value = error.response?.data?.error || 'Error updating leads. Please try again.';
+      }
+    };
+
+    const pauseCampaign = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        // Call the service to pause the campaign
+        await updateCampaignStatus(campaignId.value, 'PAUSED');
+
+        logMessage.value = `Campaign ID ${campaignId.value} has been paused.`;
+      } catch (error) {
+        console.error('Error pausing campaign:', error);
+        logMessage.value = error.response?.data?.error || 'Error pausing campaign. Please try again.';
+      }
+    };
+
+    const unpauseCampaign = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        // Call the service to unpause the campaign with a cron schedule
+        await updateCampaignStatus(campaignId.value, 'START');
+
+        logMessage.value = `Campaign ID ${campaignId.value} has been unpaused and scheduled.`;
+      } catch (error) {
+        console.error('Error unpausing campaign:', error);
+        logMessage.value = error.response?.data?.error || 'Error unpausing campaign. Please try again.';
+      }
+    };
+
+
     return {
       createCampaign: createCampaignHandler,
-      successMessage,
-      errorMessage,
+      updateLeads,
+      pauseCampaign,
+      unpauseCampaign,
+      logMessage,
       campaignCreated,
     };
   },
@@ -90,5 +175,9 @@ export default {
 </script>
 
 <style scoped>
-/* Add your styles here */
+.pause-unpause-buttons {
+  display: flex;
+  gap: 10px;
+}
+
 </style>
