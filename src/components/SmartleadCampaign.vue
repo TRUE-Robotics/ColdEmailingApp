@@ -10,13 +10,25 @@
 
     <!-- Button to update leads if the campaign is already created -->
     <button v-if="campaignCreated" @click="updateLeads">
-      Update/Add Leads (Fetch Excel File Again)
+      Import/Add Leads (Fetch Excel File Again First)
     </button>
 
-    <!-- Pause/Unpause Buttons -->
-    <div v-if="campaignCreated" class="pause-unpause-buttons">
+    <!-- Pause/Resume Buttons for Campaign -->
+    <div v-if="campaignCreated" class="campaign-pause-resume-buttons">
       <button @click="pauseCampaign">Pause Campaign</button>
-      <button @click="unpauseCampaign">Unpause Campaign</button>
+      <button @click="resumeCampaign">Resume Campaign</button>
+    </div>
+
+    <!-- Pause/Resume Buttons for Leads -->
+    <div v-if="campaignCreated" class="leads-pause-unpause-buttons">
+      <button @click="pauseAllLeads">Pause All Leads</button>
+      <button @click="resumeAllLeads">Resume All Leads</button>
+    </div>
+
+    <!-- Pause Specific Lead by Email -->
+    <div v-if="campaignCreated">
+      <input type="email" id="emailToPause" v-model="emailToPause" placeholder="Enter email for lead to pause" />
+      <button @click="pauseLeadByEmail">Pause Lead by Email</button>
     </div>
 
   </div>
@@ -24,7 +36,7 @@
 
 <script>
 import { ref } from 'vue';
-import { createCampaign, addLeadsToCampaign, updateCampaignStatus, delay } from '@/utils/smartleadService';
+import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, delay } from '@/utils/smartleadService';
 
 export default {
   name: 'SmartleadCampaign',
@@ -42,6 +54,7 @@ export default {
     const logMessage = ref('');
     const campaignCreated = ref(false);
     const campaignId = ref(null);
+    const emailToPause = ref('');
 
     const createCampaignHandler = async () => {
       try {
@@ -144,29 +157,119 @@ export default {
       }
     };
 
-    const unpauseCampaign = async () => {
+    const resumeCampaign = async () => {
       try {
         if (!campaignId.value) {
           logMessage.value = 'No campaign ID available. Please create a campaign first.';
           return;
         }
 
-        // Call the service to unpause the campaign with a cron schedule
+        // Call the service to resume the campaign
         await updateCampaignStatus(campaignId.value, 'START');
 
-        logMessage.value = `Campaign ID ${campaignId.value} has been unpaused and scheduled.`;
+        logMessage.value = `Campaign ID ${campaignId.value} has been resumed and scheduled.`;
       } catch (error) {
-        console.error('Error unpausing campaign:', error);
-        logMessage.value = error.response?.data?.error || 'Error unpausing campaign. Please try again.';
+        console.error('Error resuming campaign:', error);
+        logMessage.value = error.response?.data?.error || 'Error resuming campaign. Please try again.';
       }
     };
 
+    const pauseAllLeads = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        // Step 1: Get all leads from the campaign using the listAllLeads API
+        const leads = await listAllLeads(campaignId.value);
+
+        if (leads.total_leads == 0) {
+          logMessage.value = 'No leads available in the campaign.';
+          return;
+        }
+
+        // Step 2: Iterate over each lead and pause them
+        for (const leadInfo of leads.data) {
+          await pauseLead(campaignId.value, leadInfo.lead.id);
+        }
+
+        logMessage.value = `All ${leads.total_leads} leads have been paused.`;
+      } catch (error) {
+        console.error('Error pausing all leads:', error);
+        logMessage.value = error.response?.data?.error || 'Error pausing all leads. Please try again.';
+      }
+    };
+
+    const resumeAllLeads = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        // Step 1: Get all leads from the campaign using listAllLeads API
+        const leads = await listAllLeads(campaignId.value);
+
+        if (!Array.isArray(leads.data) || leads.total_leads === 0) {
+          logMessage.value = 'No leads available in the campaign.';
+          return;
+        }
+
+        // Step 2: Iterate over each lead and resume them using resumeLead
+        for (const leadInfo of leads.data) {
+          await resumeLead(campaignId.value, leadInfo.lead.id);
+        }
+
+        logMessage.value = `All ${leads.total_leads} leads have been resumed.`;
+      } catch (error) {
+        console.error('Error resuming all leads:', error);
+        logMessage.value = error.response?.data?.error || 'Error resuming all leads. Please try again.';
+      }
+    };
+
+    const pauseLeadByEmail = async () => {
+      try {
+        if (!campaignId.value) {
+          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          return;
+        }
+
+        if (!emailToPause.value) {
+          logMessage.value = 'Please enter a valid email address.';
+          return;
+        }
+
+        // Step 1: Fetch all leads in the campaign
+        const leads = await listAllLeads(campaignId.value);
+
+        // Step 2: Find the lead with the specified email
+        const lead = leads.data.find((leadInfo) => leadInfo.lead.email === emailToPause.value);
+
+        if (!lead) {
+          logMessage.value = `Lead with email ${emailToPause.value} not found.`;
+          return;
+        }
+
+        // Step 3: Pause the lead using their ID
+        await pauseLead(campaignId.value, lead.lead.id);
+        
+        logMessage.value = `Lead with email ${emailToPause.value} has been paused successfully.`;
+      } catch (error) {
+        console.error('Error pausing lead:', error);
+        logMessage.value = error.response?.data?.error || 'Error pausing lead. Please try again.';
+      }
+    };
 
     return {
       createCampaign: createCampaignHandler,
       updateLeads,
       pauseCampaign,
-      unpauseCampaign,
+      resumeCampaign,
+      pauseAllLeads,
+      resumeAllLeads,
+      pauseLeadByEmail,
+      emailToPause,
       logMessage,
       campaignCreated,
     };
@@ -175,9 +278,13 @@ export default {
 </script>
 
 <style scoped>
-.pause-unpause-buttons {
+.campaign-pause-unpause-buttons {
   display: flex;
   gap: 10px;
 }
 
+.leads-pause-unpause-buttons {
+  display: flex;
+  gap: 10px;
+}
 </style>

@@ -76,6 +76,69 @@ export const updateCampaignStatus = async (campaignId, status) => {
   }
 };
 
+/**
+ * Fetches all leads for a campaign by campaign ID.
+ * @param {number} campaignId - The ID of the campaign.
+ * @returns {Promise<Array>} - The list of leads in the campaign.
+ */
+export const listAllLeads = async (campaignId) => {
+  try {
+    const listLeadsUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads?api_key=${SMARTLEAD_API_KEY}`;
+    
+    const response = await axios.get(listLeadsUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data
+  } catch (error) {
+    console.error('Error fetching leads:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Pauses a lead by campaign ID and lead ID.
+ * @param {number} campaignId - The ID of the campaign.
+ * @param {number} leadId - The ID of the lead to pause.
+ * @returns {Promise} - The result of the pause lead action.
+ */
+export const pauseLead = async (campaignId, leadId) => {
+  try {
+    const pauseLeadUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads/${leadId}/pause?api_key=${SMARTLEAD_API_KEY}`;
+    
+    const response = await axios.post(pauseLeadUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Error pausing lead:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+/**
+ * Resumes a lead by campaign ID and lead ID.
+ * @param {number} campaignId - The ID of the campaign.
+ * @param {number} leadId - The ID of the lead to resume.
+ * @returns {Promise} - The result of the resume lead action.
+ */
+export const resumeLead = async (campaignId, leadId) => {
+  try {
+    const resumeLeadUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads/${leadId}/resume?api_key=${SMARTLEAD_API_KEY}`;
+    
+    const response = await axios.post(resumeLeadUrl);
+
+    return response.data;
+  } catch (error) {
+    console.error('Error resuming lead:', error.response?.data || error.message);
+    throw error;
+  }
+};
 
 /**
  * Example utility function for delaying execution.
