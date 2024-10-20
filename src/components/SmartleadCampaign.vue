@@ -4,9 +4,21 @@
     <h3>Logger</h3>
     <div v-if="logMessage">{{ logMessage }}</div>
 
-    <!-- Button to create campaign and import leads -->
+    <!-- Input for existing campaign ID -->
+    <h3 v-if="!campaignCreated"> Use Existing Campaign </h3>
+    <div v-if="!campaignCreated">
+      <input type="number" v-model="existingCampaignId" placeholder="Enter Campaign ID" />
+      <button @click="useExistingCampaign">Use Existing Campaign</button>
+    </div>
 
+    <!-- Input for campaign name if creating a new campaign -->
     <h3 v-if="!campaignCreated"> Create Campaign </h3>
+    <div v-if="!campaignCreated && !existingCampaignId">
+      <label for="campaignName">New Campaign Name:</label>
+      <input type="text" v-model="campaignName" placeholder="Enter Campaign Name" />
+    </div>
+
+    <!-- Button to create campaign and import leads -->
     <button v-if="!campaignCreated" @click="createCampaign">
       Create New Campaign and Import Leads
     </button>
@@ -93,7 +105,7 @@
 
 <script>
 import { ref } from 'vue';
-import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, saveCampaignSequence, updateCampaignSchedule, delay } from '@/utils/smartleadService';
+import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, saveCampaignSequence, updateCampaignSchedule, fetchCampaignSequence, delay } from '@/utils/smartleadService';
 
 export default {
   name: 'SmartleadCampaign',
@@ -107,10 +119,13 @@ export default {
       default: null, // Optional prop if you have a client_id
     },
   },
-  setup(props) {
+  emits: ['campaignCreated'],
+  setup(props, {emit}) {
     const logMessage = ref('Hello!');
     const campaignCreated = ref(false);
     const campaignId = ref(null);
+    const existingCampaignId = ref('');
+    const campaignName = ref('');
     const emailToPause = ref('');
     const sequences = ref([
       {
@@ -130,6 +145,33 @@ export default {
       schedule_start_time: new Date().toISOString().slice(0,16),
     });
 
+    const useExistingCampaign = async () => {
+      if (!existingCampaignId.value) {
+        logMessage.value = 'Please enter a valid Campaign ID.';
+        return;
+      }
+
+      try {
+        // Call the fetchCampaignSequence API to check if the campaign ID is valid
+        const sequence = await fetchCampaignSequence(existingCampaignId.value);
+
+        // If the API call succeeds and sequence data is returned, the campaign ID is valid
+        if (sequence) {
+          campaignId.value = existingCampaignId.value;
+          campaignCreated.value = true;
+          logMessage.value = `Using existing campaign with ID ${campaignId.value}.`;
+          emit('campaignCreated', campaignId.value);
+        } else {
+          throw new Error('Invalid Campaign ID');
+        }
+      } catch (error) {
+        // Handle invalid campaign ID or errors during the check
+        logMessage.value = 'Invalid Campaign ID. Please try again.';
+        campaignId.value = null;
+        campaignCreated.value = false;
+      }
+    };
+
     const createCampaignHandler = async () => {
       try {
         if (!props.campaignData || props.campaignData.length === 0) {
@@ -139,7 +181,7 @@ export default {
 
         // Prepare the payload for the campaign creation
         const campaignPayload = {
-          name: 'Cold Email Campaign',
+          name: campaignName.value || 'Cold Email Campaign',
           client_id: props.clientId,
         };
 
@@ -174,6 +216,7 @@ export default {
 
         logMessage.value = `Campaign created with ID ${campaignId.value} and leads added successfully.`;
         campaignCreated.value = true;
+        emit('campaignCreated', campaignId.value);
       } catch (error) {
         console.error('Error creating campaign or adding leads:', error);
         logMessage.value = error.response?.data?.error || 'Error creating campaign. Please try again.';
@@ -366,6 +409,7 @@ export default {
 
     return {
       createCampaign: createCampaignHandler,
+      useExistingCampaign,
       updateLeads,
       pauseCampaign,
       resumeCampaign,
@@ -380,6 +424,8 @@ export default {
       updateSchedule,
       logMessage,
       campaignCreated,
+      existingCampaignId,
+      campaignName
     };
   },
 };

@@ -1,5 +1,3 @@
-<!-- src/components/ExcelFileFetcher.vue -->
-
 <template>
   <div>
     <button v-if="!isAuthenticated" @click="login">Login with Microsoft</button>
@@ -8,14 +6,14 @@
       <button @click="logout">Logout</button>
       <button @click="fetchExcelFile">Fetch Excel File</button>
       <div v-if="excelData">
-        <h2>Excel Data Loaded Successfully!</h2>
+        <h2>Excel Data Loaded Successfully! Excel changes will update every 15-30 seconds. </h2>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { msalInstance, loginRequest } from "../msal";
 import axios from "axios";
 import * as XLSX from "xlsx";
@@ -27,6 +25,7 @@ export default {
     const isAuthenticated = ref(false);
     const userName = ref("");
     const excelData = ref(null);
+    const fetchInterval = ref(null);
 
     const setActiveAccount = (account) => {
       msalInstance.setActiveAccount(account);
@@ -50,6 +49,12 @@ export default {
         isAuthenticated.value = false;
         userName.value = "";
         excelData.value = null;
+
+        // Clear interval when logged out
+        if (fetchInterval.value) {
+          clearInterval(fetchInterval.value);
+          fetchInterval.value = null;
+        }
       } catch (error) {
         console.error("Logout error:", error);
       }
@@ -92,7 +97,9 @@ export default {
         }
 
         // Convert worksheet to JSON
-        const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+          defval: '',  // Set default value for empty cells to empty string or 'N/A'
+        });
 
         excelData.value = jsonData; // Store the data
 
@@ -123,9 +130,20 @@ export default {
         if (account) {
           isAuthenticated.value = true;
           userName.value = account.username;
+
+          // Fetch data on mount and set up an interval to fetch data every 15 seconds
+          await fetchExcelFile();
+          fetchInterval.value = setInterval(fetchExcelFile, 15000); // Fetch every 15 seconds
         }
       } catch (error) {
         console.error("Error handling redirect promise:", error);
+      }
+    });
+
+    // Clear the interval when the component is unmounted to avoid memory leaks
+    onUnmounted(() => {
+      if (fetchInterval.value) {
+        clearInterval(fetchInterval.value);
       }
     });
 

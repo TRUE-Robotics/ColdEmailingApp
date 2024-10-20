@@ -6,6 +6,16 @@ const SMARTLEAD_API_KEY = process.env.VUE_APP_SMARTLEAD_API_KEY;
 // Utility function to simulate a delay
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Default event types to return all possible event types
+const WEBHOOK_EVENT_TYPE = {
+  EMAIL_SENT: 'EMAIL_SENT',
+  EMAIL_OPEN: 'EMAIL_OPEN',
+  EMAIL_LINK_CLICK: 'EMAIL_LINK_CLICK',
+  EMAIL_REPLY: 'EMAIL_REPLY',
+  LEAD_UNSUBSCRIBED: 'LEAD_UNSUBSCRIBED',
+  LEAD_CATEGORY_UPDATED: 'LEAD_CATEGORY_UPDATED'
+};
+
 /**
  * Creates a campaign.
  * @param {Object} payload - The campaign payload.
@@ -25,6 +35,23 @@ export const createCampaign = async (payload) => {
     throw error;
   }
 };
+
+/**
+ * Fetches the campaign sequences for a given campaign ID.
+ * @param {number|string} campaignId - The campaign ID to fetch sequences for.
+ * @returns {Promise<Object>} - A promise that resolves to the campaign sequence data.
+ * @throws {Error} - Throws an error if the campaign ID is invalid or the API request fails.
+ */
+export const fetchCampaignSequence = async (campaignId) => {
+  try {
+    const response = await axios.get(`https://server.smartlead.ai/api/v1/campaigns/${campaignId}/sequences?api_key=${SMARTLEAD_API_KEY}`);
+    return response.data; // Assuming the sequence data is returned in `data`
+  } catch (error) {
+    console.error('Error fetching campaign sequence:', error.response?.data || error.message);
+    throw error; // Propagate error so it can be handled in the component
+  }
+};
+
 
 /**
  * Adds leads to an existing campaign.
@@ -183,6 +210,37 @@ export const updateCampaignSchedule = async (campaignId, schedulePayload) => {
   } catch (error) {
     console.error('Error updating campaign schedule:', error.response?.data || error.message);
     throw error; // Propagate the error to be handled by the caller
+  }
+};
+
+/**
+ * Add or update a webhook for a campaign.
+ * @param {number} campaignId - The ID of the campaign.
+ * @returns {Promise<Object>} - The response from the API.
+ */
+export const addOrUpdateCampaignWebhook = async (campaignId) => {
+  try {
+    const webhookPayload = {
+      id: null, // Set to null to create a new webhook
+      name: 'Webhook', 
+      webhook_url: '?',
+      event_types: Object.values(WEBHOOK_EVENT_TYPE), 
+      categories: ['Interested'] // Default category, can be changed
+    };
+
+    const webhookUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/webhooks?api_key=${SMARTLEAD_API_KEY}`;
+
+    const response = await axios.post(webhookUrl, webhookPayload, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    console.log(response.data);
+    return response.data;  // Return the response from the API
+  } catch (error) {
+    console.error('Error adding/updating webhook:', error.response?.data || error.message);
+    throw error;
   }
 };
 
