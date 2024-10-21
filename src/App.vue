@@ -1,24 +1,26 @@
 <!-- src/App.vue -->
 
 <template>
-  <div id="app">
-    <!-- Fetch Excel File -->
-    <ExcelFileFetcher @dataFetched="handleDataFetched" />
+  <v-app>
+    <v-main>
+      <!-- Fetch Excel File -->
+      <ExcelFileFetcher @dataFetched="handleDataFetched" />
 
-    <!-- Show Smartlead Campaign component if data is available -->
-    <SmartleadCampaign
-      v-if="excelData && excelData.length"
-      :campaignData="excelData"
-      @campaignCreated="handleCampaignCreated"
-    />
+      <!-- Show Smartlead Campaign component if data is available -->
+      <SmartleadCampaign
+        v-if="excelData && excelData.length"
+        :campaignData="excelData"
+        @campaignCreated="handleCampaignCreated"
+      />
 
-    <!-- Show the Spreadsheet Display Component -->
-    <SpreadsheetDisplay
-      v-if="campaignId"
-      :campaignId="campaignId"
-      :spreadsheetData="excelData"
-    />
-  </div>
+      <!-- Show the Spreadsheet Display Component -->
+      <SpreadsheetDisplay
+        v-if="campaignId"
+        :campaignId="campaignId"
+        :spreadsheetData="excelData"
+      />
+    </v-main>
+  </v-app>
 </template>
 
 <script>
@@ -26,7 +28,6 @@ import { ref } from "vue";
 import ExcelFileFetcher from "./components/ExcelFileFetcher.vue";
 import SmartleadCampaign from "./components/SmartleadCampaign.vue";
 import SpreadsheetDisplay from "./components/SpreadsheetDisplay.vue";
-
 
 export default {
   name: "App",

@@ -1,129 +1,173 @@
 <template>
-  <div>
+  <v-container>
     <!-- Log Message-->
-    <h3>Logger</h3>
-    <div v-if="logMessage">{{ logMessage }}</div>
+    <v-row>
+      <v-col>
+        <h3>Logger</h3>
+        <v-alert v-if="logMessage" type="info">{{ logMessage }}</v-alert>
+      </v-col>
+    </v-row>
 
     <!-- Input for existing campaign ID -->
-    <h3 v-if="!campaignCreated">Use Existing Campaign</h3>
-    <div v-if="!campaignCreated">
-      <input
-        type="number"
-        v-model="existingCampaignId"
-        placeholder="Enter Campaign ID"
-      />
-      <button @click="useExistingCampaign">Use Existing Campaign</button>
-    </div>
+    <v-row v-if="!campaignCreated">
+      <v-col cols="12">
+        <h3>Use Existing Campaign</h3>
+        <v-text-field
+          v-model="existingCampaignId"
+          label="Enter Campaign ID"
+          type="number"
+        ></v-text-field>
+        <v-btn @click="useExistingCampaign" color="primary">
+          Use Existing Campaign
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Input for campaign name if creating a new campaign -->
-    <h3 v-if="!campaignCreated">Create Campaign</h3>
-    <div v-if="!campaignCreated && !existingCampaignId">
-      <label for="campaignName">New Campaign Name:</label>
-      <input
-        type="text"
-        v-model="campaignName"
-        placeholder="Enter Campaign Name"
-      />
-    </div>
+    <v-row v-if="!campaignCreated && !existingCampaignId">
+      <v-col cols="12">
+        <h3>Create Campaign</h3>
+        <v-text-field
+          v-model="campaignName"
+          label="New Campaign Name"
+          placeholder="Enter Campaign Name"
+        ></v-text-field>
+      </v-col>
+    </v-row>
 
     <!-- Button to create campaign and import leads -->
-    <button v-if="!campaignCreated" @click="createCampaign">
-      Create New Campaign and Import Leads
-    </button>
+    <v-row v-if="!campaignCreated">
+      <v-col>
+        <v-btn @click="createCampaign" color="success">
+          Create New Campaign and Import Leads
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Button to update leads if the campaign is already created -->
-
-    <h3 v-if="campaignCreated">Add Leads</h3>
-    <button v-if="campaignCreated" @click="updateLeads">
-      Import/Add Leads (Fetch Excel File Again First)
-    </button>
+    <v-row v-if="campaignCreated">
+      <v-col>
+        <h3>Add Leads</h3>
+        <v-btn @click="updateLeads" color="primary">
+          Import/Add Leads (Fetch Excel File Again First)
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Pause/Resume Buttons for Campaign -->
-    <h3 v-if="campaignCreated">Pause/Unpause Campaign</h3>
-    <div v-if="campaignCreated" class="campaign-pause-resume-buttons">
-      <button @click="pauseCampaign">Pause Campaign</button>
-      <button @click="resumeCampaign">Resume Campaign</button>
-    </div>
+    <v-row v-if="campaignCreated">
+      <v-col>
+        <h3>Pause/Unpause Campaign</h3>
+        <v-btn @click="pauseCampaign" color="warning">Pause Campaign</v-btn>
+        <v-btn @click="resumeCampaign" color="success">Resume Campaign</v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Pause/Resume Buttons for Leads -->
-    <h3 v-if="campaignCreated">Pause/Unpause All Leads</h3>
-    <div v-if="campaignCreated" class="leads-pause-unpause-buttons">
-      <button @click="pauseAllLeads">Pause All Leads</button>
-      <button @click="resumeAllLeads">Resume All Leads</button>
-    </div>
+    <v-row v-if="campaignCreated">
+      <v-col>
+        <h3>Pause/Unpause All Leads</h3>
+        <v-btn @click="pauseAllLeads" color="warning">Pause All Leads</v-btn>
+        <v-btn @click="resumeAllLeads" color="success">Resume All Leads</v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Pause Specific Lead by Email -->
-    <h3 v-if="campaignCreated">Pause Lead by Email</h3>
-    <div v-if="campaignCreated">
-      <input
-        type="email"
-        id="emailToPause"
-        v-model="emailToPause"
-        placeholder="Enter email for lead to pause"
-      />
-      <button @click="pauseLeadByEmail">Pause Lead by Email</button>
-    </div>
+    <v-row v-if="campaignCreated">
+      <v-col cols="12">
+        <h3>Pause Lead by Email</h3>
+        <v-text-field
+          v-model="emailToPause"
+          label="Enter Email for Lead to Pause"
+          type="email"
+        ></v-text-field>
+        <v-btn @click="pauseLeadByEmail" color="warning">
+          Pause Lead by Email
+        </v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Sequence Input Fields -->
-    <div v-if="campaignCreated">
-      <h3>Add Sequence</h3>
-      <div v-for="(sequence, index) in sequences" :key="index">
-        <label>Sequence Number:</label>
-        <input type="number" v-model="sequence.seq_number" />
-
-        <label>Delay (in days):</label>
-        <input
-          type="number"
-          v-model="sequence.seq_delay_details.delay_in_days"
-        />
-
-        <label>Subject:</label>
-        <input type="text" v-model="sequence.subject" />
-
-        <label>Email Body:</label>
-        <textarea v-model="sequence.email_body"></textarea>
-      </div>
-      <button @click="addSequence">Add Another Sequence</button>
-      <button @click="saveSequences">Save Sequences</button>
-    </div>
+    <v-row v-if="campaignCreated">
+      <v-col cols="12">
+        <h3>Add Sequence</h3>
+        <v-card
+          v-for="(sequence, index) in sequences"
+          :key="index"
+          outlined
+          class="mb-3"
+        >
+          <v-card-text>
+            <v-text-field
+              v-model="sequence.seq_number"
+              label="Sequence Number"
+              type="number"
+            ></v-text-field>
+            <v-text-field
+              v-model="sequence.seq_delay_details.delay_in_days"
+              label="Delay (in days)"
+              type="number"
+            ></v-text-field>
+            <v-text-field
+              v-model="sequence.subject"
+              label="Subject"
+              type="text"
+            ></v-text-field>
+            <v-textarea
+              v-model="sequence.email_body"
+              label="Email Body"
+              rows="3"
+            ></v-textarea>
+          </v-card-text>
+        </v-card>
+        <v-btn @click="addSequence" color="primary">Add Another Sequence</v-btn>
+        <v-btn @click="saveSequences" color="success">Save Sequences</v-btn>
+      </v-col>
+    </v-row>
 
     <!-- Update Campaign Schedule Section -->
-    <div v-if="campaignCreated">
-      <h3>Update Campaign Schedule</h3>
-
-      <!-- Form to update schedule -->
-      <label>Timezone:</label>
-      <input
-        type="text"
-        v-model="schedule.timezone"
-        placeholder="America/Los_Angeles"
-      />
-
-      <label>Days of the Week (0-6, Sunday-Saturday):</label>
-      <input
-        type="text"
-        v-model="schedule.days_of_the_week"
-        placeholder="1,2,3"
-      />
-
-      <label>Start Hour:</label>
-      <input type="time" v-model="schedule.start_hour" placeholder="09:00" />
-
-      <label>End Hour:</label>
-      <input type="time" v-model="schedule.end_hour" placeholder="18:00" />
-
-      <label>Min Time Between Emails (in minutes):</label>
-      <input type="number" v-model="schedule.min_time_btw_emails" />
-
-      <label>Max New Leads Per Day:</label>
-      <input type="number" v-model="schedule.max_new_leads_per_day" />
-
-      <label>Schedule Start Time:</label>
-      <input type="datetime-local" v-model="schedule.schedule_start_time" />
-
-      <button @click="updateSchedule">Update Schedule</button>
-    </div>
-  </div>
+    <v-row v-if="campaignCreated">
+      <v-col cols="12">
+        <h3>Update Campaign Schedule</h3>
+        <v-text-field
+          v-model="schedule.timezone"
+          label="Timezone"
+          placeholder="America/Los_Angeles"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.days_of_the_week"
+          label="Days of the Week (0-6, Sunday-Saturday)"
+          placeholder="1,2,3"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.start_hour"
+          label="Start Hour"
+          type="time"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.end_hour"
+          label="End Hour"
+          type="time"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.min_time_btw_emails"
+          label="Min Time Between Emails (in minutes)"
+          type="number"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.max_new_leads_per_day"
+          label="Max New Leads Per Day"
+          type="number"
+        ></v-text-field>
+        <v-text-field
+          v-model="schedule.schedule_start_time"
+          label="Schedule Start Time"
+          type="datetime-local"
+        ></v-text-field>
+        <v-btn @click="updateSchedule" color="primary">Update Schedule</v-btn>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
@@ -158,7 +202,7 @@ export default {
     const logMessage = ref("Hello!");
     const campaignCreated = ref(false);
     const campaignId = ref(null);
-    const existingCampaignId = ref("");
+    const existingCampaignId = ref("751191");
     const campaignName = ref("");
     const emailToPause = ref("");
     const sequences = ref([

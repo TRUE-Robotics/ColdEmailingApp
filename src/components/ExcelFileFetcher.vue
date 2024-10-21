@@ -1,15 +1,31 @@
 <template>
-  <div>
-    <button v-if="!isAuthenticated" @click="login">Login with Microsoft</button>
-    <div v-else>
-      <p>Welcome, {{ userName }}!</p>
-      <button @click="logout">Logout</button>
-      <button @click="fetchExcelFile">Fetch Excel File</button>
-      <div v-if="excelData">
-        <h2>Excel Data Loaded Successfully! Excel changes will update every 15-30 seconds. </h2>
-      </div>
-    </div>
-  </div>
+  <v-container>
+    <v-row>
+      <v-col>
+        <v-btn v-if="!isAuthenticated" @click="login" color="primary">
+          Login with Microsoft
+        </v-btn>
+
+        <v-card v-else>
+          <v-card-title> Welcome, {{ userName }}! </v-card-title>
+
+          <v-card-actions>
+            <v-btn @click="logout" color="error"> Logout </v-btn>
+            <v-btn @click="fetchExcelFile" color="success">
+              Fetch Excel File
+            </v-btn>
+          </v-card-actions>
+
+          <v-card-text v-if="excelData">
+            <v-alert type="success">
+              Excel Data Loaded Successfully! Excel changes will update every
+              15-30 seconds.
+            </v-alert>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
@@ -98,7 +114,7 @@ export default {
 
         // Convert worksheet to JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet, {
-          defval: '',  // Set default value for empty cells to empty string or 'N/A'
+          defval: "", // Set default value for empty cells to empty string or 'N/A'
         });
 
         excelData.value = jsonData; // Store the data
