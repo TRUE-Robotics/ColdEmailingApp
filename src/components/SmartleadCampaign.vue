@@ -5,17 +5,25 @@
     <div v-if="logMessage">{{ logMessage }}</div>
 
     <!-- Input for existing campaign ID -->
-    <h3 v-if="!campaignCreated"> Use Existing Campaign </h3>
+    <h3 v-if="!campaignCreated">Use Existing Campaign</h3>
     <div v-if="!campaignCreated">
-      <input type="number" v-model="existingCampaignId" placeholder="Enter Campaign ID" />
+      <input
+        type="number"
+        v-model="existingCampaignId"
+        placeholder="Enter Campaign ID"
+      />
       <button @click="useExistingCampaign">Use Existing Campaign</button>
     </div>
 
     <!-- Input for campaign name if creating a new campaign -->
-    <h3 v-if="!campaignCreated"> Create Campaign </h3>
+    <h3 v-if="!campaignCreated">Create Campaign</h3>
     <div v-if="!campaignCreated && !existingCampaignId">
       <label for="campaignName">New Campaign Name:</label>
-      <input type="text" v-model="campaignName" placeholder="Enter Campaign Name" />
+      <input
+        type="text"
+        v-model="campaignName"
+        placeholder="Enter Campaign Name"
+      />
     </div>
 
     <!-- Button to create campaign and import leads -->
@@ -24,30 +32,35 @@
     </button>
 
     <!-- Button to update leads if the campaign is already created -->
-    
-    <h3 v-if="campaignCreated"> Add Leads </h3>
+
+    <h3 v-if="campaignCreated">Add Leads</h3>
     <button v-if="campaignCreated" @click="updateLeads">
       Import/Add Leads (Fetch Excel File Again First)
     </button>
 
     <!-- Pause/Resume Buttons for Campaign -->
-    <h3 v-if="campaignCreated"> Pause/Unpause Campaign </h3>
+    <h3 v-if="campaignCreated">Pause/Unpause Campaign</h3>
     <div v-if="campaignCreated" class="campaign-pause-resume-buttons">
       <button @click="pauseCampaign">Pause Campaign</button>
       <button @click="resumeCampaign">Resume Campaign</button>
     </div>
 
     <!-- Pause/Resume Buttons for Leads -->
-    <h3 v-if="campaignCreated"> Pause/Unpause All Leads </h3>
+    <h3 v-if="campaignCreated">Pause/Unpause All Leads</h3>
     <div v-if="campaignCreated" class="leads-pause-unpause-buttons">
       <button @click="pauseAllLeads">Pause All Leads</button>
       <button @click="resumeAllLeads">Resume All Leads</button>
     </div>
 
     <!-- Pause Specific Lead by Email -->
-    <h3 v-if="campaignCreated"> Pause Lead by Email </h3>
+    <h3 v-if="campaignCreated">Pause Lead by Email</h3>
     <div v-if="campaignCreated">
-      <input type="email" id="emailToPause" v-model="emailToPause" placeholder="Enter email for lead to pause" />
+      <input
+        type="email"
+        id="emailToPause"
+        v-model="emailToPause"
+        placeholder="Enter email for lead to pause"
+      />
       <button @click="pauseLeadByEmail">Pause Lead by Email</button>
     </div>
 
@@ -59,7 +72,10 @@
         <input type="number" v-model="sequence.seq_number" />
 
         <label>Delay (in days):</label>
-        <input type="number" v-model="sequence.seq_delay_details.delay_in_days" />
+        <input
+          type="number"
+          v-model="sequence.seq_delay_details.delay_in_days"
+        />
 
         <label>Subject:</label>
         <input type="text" v-model="sequence.subject" />
@@ -77,10 +93,18 @@
 
       <!-- Form to update schedule -->
       <label>Timezone:</label>
-      <input type="text" v-model="schedule.timezone" placeholder="America/Los_Angeles" />
+      <input
+        type="text"
+        v-model="schedule.timezone"
+        placeholder="America/Los_Angeles"
+      />
 
       <label>Days of the Week (0-6, Sunday-Saturday):</label>
-      <input type="text" v-model="schedule.days_of_the_week" placeholder="1,2,3" />
+      <input
+        type="text"
+        v-model="schedule.days_of_the_week"
+        placeholder="1,2,3"
+      />
 
       <label>Start Hour:</label>
       <input type="time" v-model="schedule.start_hour" placeholder="09:00" />
@@ -99,16 +123,26 @@
 
       <button @click="updateSchedule">Update Schedule</button>
     </div>
-
   </div>
 </template>
 
 <script>
-import { ref } from 'vue';
-import { createCampaign, addLeadsToCampaign, updateCampaignStatus, listAllLeads, pauseLead, resumeLead, saveCampaignSequence, updateCampaignSchedule, fetchCampaignSequence, delay } from '@/utils/smartleadService';
+import { ref } from "vue";
+import {
+  createCampaign,
+  addLeadsToCampaign,
+  updateCampaignStatus,
+  listAllLeads,
+  pauseLead,
+  resumeLead,
+  saveCampaignSequence,
+  updateCampaignSchedule,
+  fetchCampaignSequence,
+  delay,
+} from "@/utils/smartleadService";
 
 export default {
-  name: 'SmartleadCampaign',
+  name: "SmartleadCampaign",
   props: {
     campaignData: {
       type: Array,
@@ -119,35 +153,35 @@ export default {
       default: null, // Optional prop if you have a client_id
     },
   },
-  emits: ['campaignCreated'],
-  setup(props, {emit}) {
-    const logMessage = ref('Hello!');
+  emits: ["campaignCreated"],
+  setup(props, { emit }) {
+    const logMessage = ref("Hello!");
     const campaignCreated = ref(false);
     const campaignId = ref(null);
-    const existingCampaignId = ref('');
-    const campaignName = ref('');
-    const emailToPause = ref('');
+    const existingCampaignId = ref("");
+    const campaignName = ref("");
+    const emailToPause = ref("");
     const sequences = ref([
       {
         seq_number: 1,
         seq_delay_details: { delay_in_days: 1 },
-        subject: '',
-        email_body: '',
-      }
+        subject: "",
+        email_body: "",
+      },
     ]);
     const schedule = ref({
-      timezone: 'America/Detroit',
-      days_of_the_week: [1,2,3],
-      start_hour: '09:00',
-      end_hour: '18:00',
+      timezone: "America/Detroit",
+      days_of_the_week: [1, 2, 3],
+      start_hour: "09:00",
+      end_hour: "18:00",
       min_time_btw_emails: 10,
       max_new_leads_per_day: 20,
-      schedule_start_time: new Date().toISOString().slice(0,16),
+      schedule_start_time: new Date().toISOString().slice(0, 16),
     });
 
     const useExistingCampaign = async () => {
       if (!existingCampaignId.value) {
-        logMessage.value = 'Please enter a valid Campaign ID.';
+        logMessage.value = "Please enter a valid Campaign ID.";
         return;
       }
 
@@ -160,13 +194,13 @@ export default {
           campaignId.value = existingCampaignId.value;
           campaignCreated.value = true;
           logMessage.value = `Using existing campaign with ID ${campaignId.value}.`;
-          emit('campaignCreated', campaignId.value);
+          emit("campaignCreated", campaignId.value);
         } else {
-          throw new Error('Invalid Campaign ID');
+          throw new Error("Invalid Campaign ID");
         }
       } catch (error) {
         // Handle invalid campaign ID or errors during the check
-        logMessage.value = 'Invalid Campaign ID. Please try again.';
+        logMessage.value = "Invalid Campaign ID. Please try again.";
         campaignId.value = null;
         campaignCreated.value = false;
       }
@@ -175,13 +209,13 @@ export default {
     const createCampaignHandler = async () => {
       try {
         if (!props.campaignData || props.campaignData.length === 0) {
-          logMessage.value = 'No data available to create campaign.';
+          logMessage.value = "No data available to create campaign.";
           return;
         }
 
         // Prepare the payload for the campaign creation
         const campaignPayload = {
-          name: campaignName.value || 'Cold Email Campaign',
+          name: campaignName.value || "Cold Email Campaign",
           client_id: props.clientId,
         };
 
@@ -195,7 +229,7 @@ export default {
         const leadsPayload = {
           lead_list: props.campaignData.map((row) => ({
             first_name: row.Name,
-            last_name: row.LastName || '',
+            last_name: row.LastName || "",
             email: row.Email,
             custom_fields: {},
           })),
@@ -210,23 +244,29 @@ export default {
         await delay(2000);
 
         // Call the service to add leads
-        const addLeadsResponse = await addLeadsToCampaign(campaignId.value, leadsPayload);
+        const addLeadsResponse = await addLeadsToCampaign(
+          campaignId.value,
+          leadsPayload
+        );
 
-        console.log('Leads added to campaign:', addLeadsResponse);
+        console.log("Leads added to campaign:", addLeadsResponse);
 
         logMessage.value = `Campaign created with ID ${campaignId.value} and leads added successfully.`;
         campaignCreated.value = true;
-        emit('campaignCreated', campaignId.value);
+        emit("campaignCreated", campaignId.value);
       } catch (error) {
-        console.error('Error creating campaign or adding leads:', error);
-        logMessage.value = error.response?.data?.error || 'Error creating campaign. Please try again.';
+        console.error("Error creating campaign or adding leads:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error creating campaign. Please try again.";
       }
     };
 
     const updateLeads = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
@@ -234,9 +274,15 @@ export default {
         const updatedLeadsPayload = {
           lead_list: props.campaignData.map((row) => ({
             first_name: row.Name,
-            last_name: row.LastName || '',
+            last_name: row.LastName || "",
             email: row.Email,
-            custom_fields: {},
+            company_name: row.School,
+            custom_fields: {
+              Name: row.Name,
+              Position: row.Position,
+              State: row.State,
+              Owner: row.Owner,
+            },
           })),
           settings: {
             ignore_global_block_list: true,
@@ -246,55 +292,67 @@ export default {
         };
 
         // Call the service to update leads for the existing campaign
-        const updateLeadsResponse = await addLeadsToCampaign(campaignId.value, updatedLeadsPayload);
+        const updateLeadsResponse = await addLeadsToCampaign(
+          campaignId.value,
+          updatedLeadsPayload
+        );
 
-        console.log('Leads updated in campaign:', updateLeadsResponse);
+        console.log("Leads updated in campaign:", updateLeadsResponse);
 
         logMessage.value = `Leads successfully updated for campaign ID ${campaignId.value}.`;
       } catch (error) {
-        console.error('Error updating leads:', error);
-        logMessage.value = error.response?.data?.error || 'Error updating leads. Please try again.';
+        console.error("Error updating leads:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error updating leads. Please try again.";
       }
     };
 
     const pauseCampaign = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
         // Call the service to pause the campaign
-        await updateCampaignStatus(campaignId.value, 'PAUSED');
+        await updateCampaignStatus(campaignId.value, "PAUSED");
 
         logMessage.value = `Campaign ID ${campaignId.value} has been paused.`;
       } catch (error) {
-        console.error('Error pausing campaign:', error);
-        logMessage.value = error.response?.data?.error || 'Error pausing campaign. Please try again.';
+        console.error("Error pausing campaign:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error pausing campaign. Please try again.";
       }
     };
 
     const resumeCampaign = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
         // Call the service to resume the campaign
-        await updateCampaignStatus(campaignId.value, 'START');
+        await updateCampaignStatus(campaignId.value, "START");
 
         logMessage.value = `Campaign ID ${campaignId.value} has been resumed and scheduled.`;
       } catch (error) {
-        console.error('Error resuming campaign:', error);
-        logMessage.value = error.response?.data?.error || 'Error resuming campaign. Please try again.';
+        console.error("Error resuming campaign:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error resuming campaign. Please try again.";
       }
     };
 
     const pauseAllLeads = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
@@ -302,7 +360,7 @@ export default {
         const leads = await listAllLeads(campaignId.value);
 
         if (leads.total_leads == 0) {
-          logMessage.value = 'No leads available in the campaign.';
+          logMessage.value = "No leads available in the campaign.";
           return;
         }
 
@@ -313,15 +371,18 @@ export default {
 
         logMessage.value = `All ${leads.total_leads} leads have been paused.`;
       } catch (error) {
-        console.error('Error pausing all leads:', error);
-        logMessage.value = error.response?.data?.error || 'Error pausing all leads. Please try again.';
+        console.error("Error pausing all leads:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error pausing all leads. Please try again.";
       }
     };
 
     const resumeAllLeads = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
@@ -329,7 +390,7 @@ export default {
         const leads = await listAllLeads(campaignId.value);
 
         if (!Array.isArray(leads.data) || leads.total_leads === 0) {
-          logMessage.value = 'No leads available in the campaign.';
+          logMessage.value = "No leads available in the campaign.";
           return;
         }
 
@@ -340,20 +401,23 @@ export default {
 
         logMessage.value = `All ${leads.total_leads} leads have been resumed.`;
       } catch (error) {
-        console.error('Error resuming all leads:', error);
-        logMessage.value = error.response?.data?.error || 'Error resuming all leads. Please try again.';
+        console.error("Error resuming all leads:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error resuming all leads. Please try again.";
       }
     };
 
     const pauseLeadByEmail = async () => {
       try {
         if (!campaignId.value) {
-          logMessage.value = 'No campaign ID available. Please create a campaign first.';
+          logMessage.value =
+            "No campaign ID available. Please create a campaign first.";
           return;
         }
 
         if (!emailToPause.value) {
-          logMessage.value = 'Please enter a valid email address.';
+          logMessage.value = "Please enter a valid email address.";
           return;
         }
 
@@ -361,7 +425,9 @@ export default {
         const leads = await listAllLeads(campaignId.value);
 
         // Step 2: Find the lead with the specified email
-        const lead = leads.data.find((leadInfo) => leadInfo.lead.email === emailToPause.value);
+        const lead = leads.data.find(
+          (leadInfo) => leadInfo.lead.email === emailToPause.value
+        );
 
         if (!lead) {
           logMessage.value = `Lead with email ${emailToPause.value} not found.`;
@@ -370,11 +436,13 @@ export default {
 
         // Step 3: Pause the lead using their ID
         await pauseLead(campaignId.value, lead.lead.id);
-        
+
         logMessage.value = `Lead with email ${emailToPause.value} has been paused successfully.`;
       } catch (error) {
-        console.error('Error pausing lead:', error);
-        logMessage.value = error.response?.data?.error || 'Error pausing lead. Please try again.';
+        console.error("Error pausing lead:", error);
+        logMessage.value =
+          error.response?.data?.error ||
+          "Error pausing lead. Please try again.";
       }
     };
 
@@ -382,8 +450,8 @@ export default {
       sequences.value.push({
         seq_number: sequences.value.length + 1,
         seq_delay_details: { delay_in_days: 1 },
-        subject: '',
-        email_body: '',
+        subject: "",
+        email_body: "",
       });
     };
 
@@ -391,9 +459,10 @@ export default {
       try {
         const sequencePayload = { sequences: sequences.value };
         await saveCampaignSequence(campaignId.value, sequencePayload);
-        logMessage.value = 'Sequences saved successfully.';
+        logMessage.value = "Sequences saved successfully.";
       } catch (error) {
-        logMessage.value = error.response?.data?.error || 'Error saving sequences.';
+        logMessage.value =
+          error.response?.data?.error || "Error saving sequences.";
       }
     };
 
@@ -401,9 +470,10 @@ export default {
       try {
         const schedulePayload = { ...schedule.value };
         await updateCampaignSchedule(campaignId.value, schedulePayload);
-        logMessage.value = 'Schedule updated successfully!';
+        logMessage.value = "Schedule updated successfully!";
       } catch (error) {
-        logMessage.value = error.response?.data?.error || 'Error updating schedule.';
+        logMessage.value =
+          error.response?.data?.error || "Error updating schedule.";
       }
     };
 
@@ -425,7 +495,7 @@ export default {
       logMessage,
       campaignCreated,
       existingCampaignId,
-      campaignName
+      campaignName,
     };
   },
 };
