@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 // SmartLead API Key
 const SMARTLEAD_API_KEY = process.env.VUE_APP_SMARTLEAD_API_KEY;
@@ -8,12 +8,12 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Default event types to return all possible event types
 const WEBHOOK_EVENT_TYPE = {
-  EMAIL_SENT: 'EMAIL_SENT',
-  EMAIL_OPEN: 'EMAIL_OPEN',
-  EMAIL_LINK_CLICK: 'EMAIL_LINK_CLICK',
-  EMAIL_REPLY: 'EMAIL_REPLY',
-  LEAD_UNSUBSCRIBED: 'LEAD_UNSUBSCRIBED',
-  LEAD_CATEGORY_UPDATED: 'LEAD_CATEGORY_UPDATED'
+  EMAIL_SENT: "EMAIL_SENT",
+  EMAIL_OPEN: "EMAIL_OPEN",
+  EMAIL_LINK_CLICK: "EMAIL_LINK_CLICK",
+  EMAIL_REPLY: "EMAIL_REPLY",
+  LEAD_UNSUBSCRIBED: "LEAD_UNSUBSCRIBED",
+  LEAD_CATEGORY_UPDATED: "LEAD_CATEGORY_UPDATED",
 };
 
 /**
@@ -26,12 +26,37 @@ export const createCampaign = async (payload) => {
     const createCampaignUrl = `https://server.smartlead.ai/api/v1/campaigns/create?api_key=${SMARTLEAD_API_KEY}`;
     const response = await axios.post(createCampaignUrl, payload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     return response.data;
   } catch (error) {
-    console.error('Error creating campaign:', error.response?.data || error.message);
+    console.error(
+      "Error creating campaign:",
+      error.response?.data || error.message
+    );
+    throw error;
+  }
+};
+
+/**
+ * Fetches the list of all campaigns.
+ * @returns {Promise} - The result containing the list of campaigns.
+ */
+export const getCampaigns = async () => {
+  try {
+    const getCampaignsUrl = `https://server.smartlead.ai/api/v1/campaigns?api_key=${SMARTLEAD_API_KEY}`;
+    const response = await axios.get(getCampaignsUrl, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error(
+      "Error fetching campaigns:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -44,14 +69,18 @@ export const createCampaign = async (payload) => {
  */
 export const fetchCampaignSequence = async (campaignId) => {
   try {
-    const response = await axios.get(`https://server.smartlead.ai/api/v1/campaigns/${campaignId}/sequences?api_key=${SMARTLEAD_API_KEY}`);
+    const response = await axios.get(
+      `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/sequences?api_key=${SMARTLEAD_API_KEY}`
+    );
     return response.data; // Assuming the sequence data is returned in `data`
   } catch (error) {
-    console.error('Error fetching campaign sequence:', error.response?.data || error.message);
+    console.error(
+      "Error fetching campaign sequence:",
+      error.response?.data || error.message
+    );
     throw error; // Propagate error so it can be handled in the component
   }
 };
-
 
 /**
  * Adds leads to an existing campaign.
@@ -64,12 +93,12 @@ export const addLeadsToCampaign = async (campaignId, leadsPayload) => {
     const addLeadsUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads?api_key=${SMARTLEAD_API_KEY}`;
     const response = await axios.post(addLeadsUrl, leadsPayload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
     return response.data;
   } catch (error) {
-    console.error('Error adding leads:', error.response?.data || error.message);
+    console.error("Error adding leads:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -92,13 +121,16 @@ export const updateCampaignStatus = async (campaignId, status) => {
     // Make the POST request to update the campaign status and schedule
     const response = await axios.post(updateStatusUrl, payload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data;
   } catch (error) {
-    console.error('Error updating campaign status:', error.response?.data || error.message);
+    console.error(
+      "Error updating campaign status:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -111,16 +143,19 @@ export const updateCampaignStatus = async (campaignId, status) => {
 export const listAllLeads = async (campaignId) => {
   try {
     const listLeadsUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads?api_key=${SMARTLEAD_API_KEY}`;
-    
+
     const response = await axios.get(listLeadsUrl, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
-    return response.data
+    return response.data;
   } catch (error) {
-    console.error('Error fetching leads:', error.response?.data || error.message);
+    console.error(
+      "Error fetching leads:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -134,16 +169,16 @@ export const listAllLeads = async (campaignId) => {
 export const pauseLead = async (campaignId, leadId) => {
   try {
     const pauseLeadUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads/${leadId}/pause?api_key=${SMARTLEAD_API_KEY}`;
-    
+
     const response = await axios.post(pauseLeadUrl, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data;
   } catch (error) {
-    console.error('Error pausing lead:', error.response?.data || error.message);
+    console.error("Error pausing lead:", error.response?.data || error.message);
     throw error;
   }
 };
@@ -158,22 +193,28 @@ export const pauseLead = async (campaignId, leadId) => {
 export const resumeLead = async (campaignId, leadId, delayDays = 2) => {
   try {
     const resumeLeadUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads/${leadId}/resume?api_key=${SMARTLEAD_API_KEY}`;
-    
-    const response = await axios.post(resumeLeadUrl, {
-      resume_lead_with_delay_days: delayDays, // Send the delay in the body
-    }, {
-      headers: {
-        'Content-Type': 'application/json', // Ensure the content type is set to JSON
+
+    const response = await axios.post(
+      resumeLeadUrl,
+      {
+        resume_lead_with_delay_days: delayDays, // Send the delay in the body
       },
-    });
+      {
+        headers: {
+          "Content-Type": "application/json", // Ensure the content type is set to JSON
+        },
+      }
+    );
 
     return response.data;
   } catch (error) {
-    console.error('Error resuming lead:', error.response?.data || error.message);
+    console.error(
+      "Error resuming lead:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
-
 
 /**
  * Save campaign sequence for a specific campaign.
@@ -184,16 +225,19 @@ export const resumeLead = async (campaignId, leadId, delayDays = 2) => {
 export const saveCampaignSequence = async (campaignId, sequencePayload) => {
   try {
     const saveSequenceUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/sequences?api_key=${SMARTLEAD_API_KEY}`;
-    
+
     const response = await axios.post(saveSequenceUrl, sequencePayload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data; // Return the data from the API response
   } catch (error) {
-    console.error('Error saving campaign sequence:', error.response?.data || error.message);
+    console.error(
+      "Error saving campaign sequence:",
+      error.response?.data || error.message
+    );
     throw error; // Propagate the error to be handled by the caller
   }
 };
@@ -207,16 +251,19 @@ export const saveCampaignSequence = async (campaignId, sequencePayload) => {
 export const updateCampaignSchedule = async (campaignId, schedulePayload) => {
   try {
     const updateScheduleUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/schedule?api_key=${SMARTLEAD_API_KEY}`;
-    
+
     const response = await axios.post(updateScheduleUrl, schedulePayload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     return response.data; // Return the data from the API response
   } catch (error) {
-    console.error('Error updating campaign schedule:', error.response?.data || error.message);
+    console.error(
+      "Error updating campaign schedule:",
+      error.response?.data || error.message
+    );
     throw error; // Propagate the error to be handled by the caller
   }
 };
@@ -230,24 +277,27 @@ export const addOrUpdateCampaignWebhook = async (campaignId) => {
   try {
     const webhookPayload = {
       id: null, // Set to null to create a new webhook
-      name: 'Webhook', 
-      webhook_url: '?',
-      event_types: Object.values(WEBHOOK_EVENT_TYPE), 
-      categories: ['Interested'] // Default category, can be changed
+      name: "Webhook",
+      webhook_url: "?",
+      event_types: Object.values(WEBHOOK_EVENT_TYPE),
+      categories: ["Interested"], // Default category, can be changed
     };
 
     const webhookUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/webhooks?api_key=${SMARTLEAD_API_KEY}`;
 
     const response = await axios.post(webhookUrl, webhookPayload, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
     console.log(response.data);
-    return response.data;  // Return the response from the API
+    return response.data; // Return the response from the API
   } catch (error) {
-    console.error('Error adding/updating webhook:', error.response?.data || error.message);
+    console.error(
+      "Error adding/updating webhook:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };

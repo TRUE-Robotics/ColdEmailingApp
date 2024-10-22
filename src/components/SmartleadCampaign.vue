@@ -88,7 +88,7 @@
     </v-row>
 
     <!-- Sequence Input Fields -->
-    <v-row v-if="campaignCreated">
+    <!-- <v-row v-if="campaignCreated">
       <v-col cols="12">
         <h3>Add Sequence</h3>
         <v-card
@@ -123,10 +123,10 @@
         <v-btn @click="addSequence" color="primary">Add Another Sequence</v-btn>
         <v-btn @click="saveSequences" color="success">Save Sequences</v-btn>
       </v-col>
-    </v-row>
+    </v-row> -->
 
     <!-- Update Campaign Schedule Section -->
-    <v-row v-if="campaignCreated">
+    <!-- <v-row v-if="campaignCreated">
       <v-col cols="12">
         <h3>Update Campaign Schedule</h3>
         <v-text-field
@@ -166,7 +166,7 @@
         ></v-text-field>
         <v-btn @click="updateSchedule" color="primary">Update Schedule</v-btn>
       </v-col>
-    </v-row>
+    </v-row> -->
   </v-container>
 </template>
 
@@ -183,6 +183,7 @@ import {
   updateCampaignSchedule,
   fetchCampaignSequence,
   delay,
+  // getCampaigns,
 } from "@/utils/smartleadService";
 
 export default {
