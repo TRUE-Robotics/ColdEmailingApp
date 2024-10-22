@@ -45,17 +45,14 @@ export const createCampaign = async (payload) => {
  */
 export const getCampaigns = async () => {
   try {
-    const getCampaignsUrl = `https://server.smartlead.ai/api/v1/campaigns?api_key=${SMARTLEAD_API_KEY}`;
-    const response = await axios.get(getCampaignsUrl, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.get(
+      `https://server.smartlead.ai/api/v1/campaigns?api_key=${SMARTLEAD_API_KEY}`
+    );
     return response.data;
   } catch (error) {
     console.error(
       "Error fetching campaigns:",
-      error.response?.data || error.message
+      error.response?.data?.message || error.message || "Unknown error"
     );
     throw error;
   }

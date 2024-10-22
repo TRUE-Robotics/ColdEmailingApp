@@ -251,245 +251,19 @@ export default {
       }
     };
 
-    const createCampaignHandler = async () => {
-      try {
-        if (!props.campaignData || props.campaignData.length === 0) {
-          logMessage.value = "No data available to create campaign.";
-          return;
-        }
+    const createCampaignHandler = async () => {};
 
-        // Prepare the payload for the campaign creation
-        const campaignPayload = {
-          name: campaignName.value || "Cold Email Campaign",
-          client_id: props.clientId,
-        };
+    const updateLeads = async () => {};
 
-        // Call the service to create the campaign
-        const campaignResponse = await createCampaign(campaignPayload);
-        campaignId.value = campaignResponse.id;
+    const pauseCampaign = async () => {};
 
-        console.log(`Campaign created with ID: ${campaignId.value}`);
+    const resumeCampaign = async () => {};
 
-        // Prepare the payload for adding leads
-        const leadsPayload = {
-          lead_list: props.campaignData.map((row) => ({
-            first_name: row.Name,
-            last_name: row.LastName || "",
-            email: row.Email,
-            custom_fields: {},
-          })),
-          settings: {
-            ignore_global_block_list: true,
-            ignore_unsubscribe_list: true,
-            ignore_duplicate_leads_in_other_campaign: false,
-          },
-        };
+    const pauseAllLeads = async () => {};
 
-        // Optional delay before adding leads
-        await delay(2000);
+    const resumeAllLeads = async () => {};
 
-        // Call the service to add leads
-        const addLeadsResponse = await addLeadsToCampaign(
-          campaignId.value,
-          leadsPayload
-        );
-
-        console.log("Leads added to campaign:", addLeadsResponse);
-
-        logMessage.value = `Campaign created with ID ${campaignId.value} and leads added successfully.`;
-        campaignCreated.value = true;
-        emit("campaignCreated", campaignId.value);
-      } catch (error) {
-        console.error("Error creating campaign or adding leads:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error creating campaign. Please try again.";
-      }
-    };
-
-    const updateLeads = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        // Prepare the payload for adding updated leads
-        const updatedLeadsPayload = {
-          lead_list: props.campaignData.map((row) => ({
-            first_name: row.Name,
-            last_name: row.LastName || "",
-            email: row.Email,
-            company_name: row.School,
-            custom_fields: {
-              Name: row.Name,
-              Position: row.Position,
-              State: row.State,
-              Owner: row.Owner,
-            },
-          })),
-          settings: {
-            ignore_global_block_list: true,
-            ignore_unsubscribe_list: true,
-            ignore_duplicate_leads_in_other_campaign: false,
-          },
-        };
-
-        // Call the service to update leads for the existing campaign
-        const updateLeadsResponse = await addLeadsToCampaign(
-          campaignId.value,
-          updatedLeadsPayload
-        );
-
-        console.log("Leads updated in campaign:", updateLeadsResponse);
-
-        logMessage.value = `Leads successfully updated for campaign ID ${campaignId.value}.`;
-      } catch (error) {
-        console.error("Error updating leads:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error updating leads. Please try again.";
-      }
-    };
-
-    const pauseCampaign = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        // Call the service to pause the campaign
-        await updateCampaignStatus(campaignId.value, "PAUSED");
-
-        logMessage.value = `Campaign ID ${campaignId.value} has been paused.`;
-      } catch (error) {
-        console.error("Error pausing campaign:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error pausing campaign. Please try again.";
-      }
-    };
-
-    const resumeCampaign = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        // Call the service to resume the campaign
-        await updateCampaignStatus(campaignId.value, "START");
-
-        logMessage.value = `Campaign ID ${campaignId.value} has been resumed and scheduled.`;
-      } catch (error) {
-        console.error("Error resuming campaign:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error resuming campaign. Please try again.";
-      }
-    };
-
-    const pauseAllLeads = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        // Step 1: Get all leads from the campaign using the listAllLeads API
-        const leads = await listAllLeads(campaignId.value);
-
-        if (leads.total_leads == 0) {
-          logMessage.value = "No leads available in the campaign.";
-          return;
-        }
-
-        // Step 2: Iterate over each lead and pause them
-        for (const leadInfo of leads.data) {
-          await pauseLead(campaignId.value, leadInfo.lead.id);
-        }
-
-        logMessage.value = `All ${leads.total_leads} leads have been paused.`;
-      } catch (error) {
-        console.error("Error pausing all leads:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error pausing all leads. Please try again.";
-      }
-    };
-
-    const resumeAllLeads = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        // Step 1: Get all leads from the campaign using listAllLeads API
-        const leads = await listAllLeads(campaignId.value);
-
-        if (!Array.isArray(leads.data) || leads.total_leads === 0) {
-          logMessage.value = "No leads available in the campaign.";
-          return;
-        }
-
-        // Step 2: Iterate over each lead and resume them using resumeLead
-        for (const leadInfo of leads.data) {
-          await resumeLead(campaignId.value, leadInfo.lead.id);
-        }
-
-        logMessage.value = `All ${leads.total_leads} leads have been resumed.`;
-      } catch (error) {
-        console.error("Error resuming all leads:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error resuming all leads. Please try again.";
-      }
-    };
-
-    const pauseLeadByEmail = async () => {
-      try {
-        if (!campaignId.value) {
-          logMessage.value =
-            "No campaign ID available. Please create a campaign first.";
-          return;
-        }
-
-        if (!emailToPause.value) {
-          logMessage.value = "Please enter a valid email address.";
-          return;
-        }
-
-        // Step 1: Fetch all leads in the campaign
-        const leads = await listAllLeads(campaignId.value);
-
-        // Step 2: Find the lead with the specified email
-        const lead = leads.data.find(
-          (leadInfo) => leadInfo.lead.email === emailToPause.value
-        );
-
-        if (!lead) {
-          logMessage.value = `Lead with email ${emailToPause.value} not found.`;
-          return;
-        }
-
-        // Step 3: Pause the lead using their ID
-        await pauseLead(campaignId.value, lead.lead.id);
-
-        logMessage.value = `Lead with email ${emailToPause.value} has been paused successfully.`;
-      } catch (error) {
-        console.error("Error pausing lead:", error);
-        logMessage.value =
-          error.response?.data?.error ||
-          "Error pausing lead. Please try again.";
-      }
-    };
+    const pauseLeadByEmail = async () => {};
 
     const addSequence = () => {
       sequences.value.push({
@@ -511,16 +285,7 @@ export default {
       }
     };
 
-    const updateSchedule = async () => {
-      try {
-        const schedulePayload = { ...schedule.value };
-        await updateCampaignSchedule(campaignId.value, schedulePayload);
-        logMessage.value = "Schedule updated successfully!";
-      } catch (error) {
-        logMessage.value =
-          error.response?.data?.error || "Error updating schedule.";
-      }
-    };
+    const updateSchedule = async () => {};
 
     return {
       createCampaign: createCampaignHandler,

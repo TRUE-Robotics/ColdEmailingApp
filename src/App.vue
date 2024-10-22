@@ -1,33 +1,38 @@
-<!-- src/App.vue -->
-
 <template>
   <v-app>
+    <!-- Navigation or Header Component (optional) -->
+    <v-app-bar app color="primary" dark>
+      <v-toolbar-title>Smartlead Campaign Manager</v-toolbar-title>
+    </v-app-bar>
+
     <v-main>
       <!-- Fetch Excel File -->
       <ExcelFileFetcher @dataFetched="handleDataFetched" />
 
-      <!-- Show Smartlead Campaign component if data is available -->
-      <SpreadsheetDisplay
-        v-if="campaignId"
-        :campaignId="campaignId"
-        :spreadsheetData="excelData"
-      />
+      <!-- Show the Spreadsheet Display Component if data is available -->
+      <SpreadsheetDisplay v-if="excelData" :spreadsheetData="excelData" />
+
       <SmartleadCampaign
-        v-if="excelData && excelData.length"
+        v-if="excelData"
         :campaignData="excelData"
         @campaignCreated="handleCampaignCreated"
       />
-
-      <!-- Show the Spreadsheet Display Component -->
     </v-main>
+
+    <!-- Footer (optional) -->
+    <v-footer app>
+      <v-col class="text-center">
+        &copy; 2024 True Robotics - All Rights Reserved
+      </v-col>
+    </v-footer>
   </v-app>
 </template>
 
 <script>
 import { ref } from "vue";
 import ExcelFileFetcher from "./components/ExcelFileFetcher.vue";
-import SmartleadCampaign from "./components/SmartleadCampaign.vue";
-import SpreadsheetDisplay from "./components/SpreadsheetDisplay.vue";
+import SmartleadCampaign from "./views/SmartleadCampaign.vue";
+import SpreadsheetDisplay from "./views/SpreadsheetDisplay.vue";
 
 export default {
   name: "App",
@@ -38,21 +43,14 @@ export default {
   },
   setup() {
     const excelData = ref(null);
-    const campaignId = ref(null);
 
     const handleDataFetched = (data) => {
-      excelData.value = data;
-    };
-
-    const handleCampaignCreated = (id) => {
-      campaignId.value = id;
+      excelData.value = data; // Update excelData with new fetched data
     };
 
     return {
       excelData,
       handleDataFetched,
-      campaignId,
-      handleCampaignCreated,
     };
   },
 };
