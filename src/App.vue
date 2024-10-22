@@ -7,6 +7,11 @@
       <ExcelFileFetcher @dataFetched="handleDataFetched" />
 
       <!-- Show Smartlead Campaign component if data is available -->
+      <SpreadsheetDisplay
+        v-if="campaignId"
+        :campaignId="campaignId"
+        :spreadsheetData="excelData"
+      />
       <SmartleadCampaign
         v-if="excelData && excelData.length"
         :campaignData="excelData"
@@ -14,11 +19,6 @@
       />
 
       <!-- Show the Spreadsheet Display Component -->
-      <SpreadsheetDisplay
-        v-if="campaignId"
-        :campaignId="campaignId"
-        :spreadsheetData="excelData"
-      />
     </v-main>
   </v-app>
 </template>

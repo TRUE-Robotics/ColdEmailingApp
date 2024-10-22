@@ -1,76 +1,46 @@
 <template>
   <v-container class="spreadsheet-container">
+    <h2>Spreadsheet Data</h2>
+
+    <!-- Display log message for errors or information -->
+    <v-alert v-if="logMessage" type="info">
+      {{ logMessage }}
+    </v-alert>
+
+    <!-- Row of autocomplete inputs for filtering the first five columns -->
     <v-row>
-      <v-col>
-        <h2>Spreadsheet Data</h2>
-
-        <!-- Display log message for errors or information -->
-        <v-alert v-if="logMessage" type="info">
-          {{ logMessage }}
-        </v-alert>
-
-        <!-- Controls for filtering and sorting -->
-        <v-card outlined class="pa-4">
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="filterColumn"
-                label="Filter by Column"
-                placeholder="Enter column (e.g., 'State')"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="filterValue"
-                label="Value"
-                placeholder="Enter value (e.g., 'MA')"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12">
-              <v-btn color="primary" @click="applyFilter"> Apply Filter </v-btn>
-            </v-col>
-          </v-row>
-
-          <v-row>
-            <v-col cols="12" md="6">
-              <v-text-field
-                v-model="sortColumn"
-                label="Sort by Column"
-                placeholder="Enter column (e.g., 'Priority')"
-              ></v-text-field>
-            </v-col>
-            <v-col cols="12">
-              <v-btn color="primary" @click="applySort(true)">
-                Sort Ascending
-              </v-btn>
-              <v-btn color="primary" @click="applySort(false)">
-                Sort Descending
-              </v-btn>
-            </v-col>
-          </v-row>
-        </v-card>
-
-        <!-- Display data in a table format -->
-        <v-data-table
-          v-if="tableData.length > 0"
-          :items="tableData"
-          class="mt-4"
+      <v-col
+        v-for="header in headers.slice(0, 5)"
+        :key="header"
+        cols="auto"
+        class="filter-input"
+      >
+        <v-autocomplete
+          v-model="columnFilters[header]"
+          :items="columnUniqueValues[header]"
+          :label="header"
+          placeholder="Filter"
           dense
-        >
-          <template v-slot:item="{ item }">
-            <tr>
-              <td v-for="(value, index) in item" :key="index">{{ value }}</td>
-            </tr>
-          </template>
-        </v-data-table>
+          hide-details
+          clearable
+          allow-overflow
+        ></v-autocomplete>
       </v-col>
     </v-row>
+
+    <!-- Display data in a table format -->
+    <v-data-table
+      :headers="tableHeaders"
+      :items="filteredData"
+      :items-per-page="100"
+      dense
+    >
+    </v-data-table>
   </v-container>
 </template>
 
 <script>
-import { ref, watch } from "vue";
-import { filterByColumn, sortByColumn } from "@/utils/spreadsheetService";
+import { ref, computed, onMounted } from "vue";
 
 export default {
   name: "SpreadsheetDisplay",
@@ -86,57 +56,67 @@ export default {
     const headers = ref([]);
     const logMessage = ref("");
 
-    // Filter and sort fields
-    const filterColumn = ref("");
-    const filterValue = ref("");
-    const sortColumn = ref("");
+    // Column filters for the first five headers
+    const columnFilters = ref({});
 
-    // Watch for changes in spreadsheet data and initialize the table
-    watch(
-      () => props.spreadsheetData,
-      (newData) => {
-        if (newData && newData.length > 0) {
-          tableData.value = newData;
-          headers.value = Object.keys(newData[0]); // Set headers based on the keys of the first object
-        } else {
-          logMessage.value = "No data available in the spreadsheet.";
-        }
-      },
-      { immediate: true } // Trigger watch immediately on component mount
-    );
+    // Unique values for autocomplete options
+    const columnUniqueValues = ref({});
 
-    // Function to apply filters
-    const applyFilter = () => {
-      if (filterColumn.value && filterValue.value) {
-        tableData.value = filterByColumn(
-          props.spreadsheetData,
-          filterColumn.value,
-          filterValue.value
-        );
-        headers.value = Object.keys(tableData.value[0]);
+    // Initialize data on component mount
+    onMounted(() => {
+      if (props.spreadsheetData && props.spreadsheetData.length > 0) {
+        tableData.value = props.spreadsheetData;
+
+        headers.value = Object.keys(props.spreadsheetData[0]);
+
+        // Initialize columnFilters and columnUniqueValues for the first five headers
+        headers.value.slice(0, 5).forEach((header) => {
+          columnFilters.value[header] = "";
+          columnUniqueValues.value[header] = getUniqueValues(header);
+        });
+      } else {
+        logMessage.value = "No data available in the spreadsheet.";
       }
+    });
+
+    // Function to get unique values for a given column
+    const getUniqueValues = (header) => {
+      const values = tableData.value.map((item) => item[header]);
+      return [...new Set(values)].filter((v) => v !== undefined && v !== null);
     };
 
-    // Function to apply sorting
-    const applySort = (ascending) => {
-      if (sortColumn.value) {
-        tableData.value = sortByColumn(
-          tableData.value,
-          sortColumn.value,
-          ascending
-        );
-      }
-    };
+    // Computed property for filtered data
+    const filteredData = computed(() => {
+      let data = tableData.value;
+
+      // Apply column filters for the first five headers
+      data = data.filter((item) => {
+        return headers.value.slice(0, 5).every((header) => {
+          const filterValue = columnFilters.value[header];
+          if (!filterValue) return true;
+          const cellValue = String(item[header]).toLowerCase();
+          return cellValue.includes(String(filterValue).toLowerCase());
+        });
+      });
+
+      return data;
+    });
+
+    // Prepare headers for v-data-table
+    const tableHeaders = computed(() => {
+      return headers.value.map((header) => ({
+        key: header,
+        title: header,
+      }));
+    });
 
     return {
-      tableData,
-      headers,
+      filteredData,
+      tableHeaders,
       logMessage,
-      filterColumn,
-      filterValue,
-      sortColumn,
-      applyFilter,
-      applySort,
+      headers,
+      columnFilters,
+      columnUniqueValues,
     };
   },
 };
@@ -145,40 +125,21 @@ export default {
 <style scoped>
 .spreadsheet-container {
   margin: 20px;
-  width: 100%;
-  max-width: 100%;
+  width: 95%;
+  max-width: 95%;
   overflow-x: auto;
 }
 
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
+.v-row {
+  margin-bottom: 10px;
 }
 
-.data-table th,
-.data-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
+.filter-input {
+  width: 20%;
+  padding-right: 10px;
 }
 
-.data-table th {
-  background-color: #f2f2f2;
-  text-align: left;
-}
-
-.data-table a {
-  color: #3498db;
-}
-
-.controls {
-  margin-bottom: 20px;
-}
-
-.controls label {
-  margin-right: 5px;
-}
-
-.controls input {
-  margin-right: 10px;
+.v-data-table {
+  margin-top: 10px;
 }
 </style>

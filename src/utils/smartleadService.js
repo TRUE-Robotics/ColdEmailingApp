@@ -152,13 +152,20 @@ export const pauseLead = async (campaignId, leadId) => {
  * Resumes a lead by campaign ID and lead ID.
  * @param {number} campaignId - The ID of the campaign.
  * @param {number} leadId - The ID of the lead to resume.
+ * @param {number} delayDays - Days before next sequence starts for lead.
  * @returns {Promise} - The result of the resume lead action.
  */
-export const resumeLead = async (campaignId, leadId) => {
+export const resumeLead = async (campaignId, leadId, delayDays = 2) => {
   try {
     const resumeLeadUrl = `https://server.smartlead.ai/api/v1/campaigns/${campaignId}/leads/${leadId}/resume?api_key=${SMARTLEAD_API_KEY}`;
     
-    const response = await axios.post(resumeLeadUrl);
+    const response = await axios.post(resumeLeadUrl, {
+      resume_lead_with_delay_days: delayDays, // Send the delay in the body
+    }, {
+      headers: {
+        'Content-Type': 'application/json', // Ensure the content type is set to JSON
+      },
+    });
 
     return response.data;
   } catch (error) {
@@ -166,6 +173,7 @@ export const resumeLead = async (campaignId, leadId) => {
     throw error;
   }
 };
+
 
 /**
  * Save campaign sequence for a specific campaign.
