@@ -10,12 +10,15 @@
       <ExcelFileFetcher @dataFetched="handleDataFetched" />
 
       <!-- Show the Spreadsheet Display Component if data is available -->
-      <SpreadsheetDisplay v-if="excelData" :spreadsheetData="excelData" />
+      <SpreadsheetDisplay v-if="excelData" 
+        :spreadsheetData="excelData" 
+        :campaignId="campaignId"
+        />
 
       <SmartleadCampaign
         v-if="excelData"
         :campaignData="excelData"
-        @campaignCreated="handleCampaignCreated"
+        @campaignId="handleSharedCampaignId"
       />
     </v-main>
 
@@ -43,14 +46,21 @@ export default {
   },
   setup() {
     const excelData = ref(null);
+    const campaignId = ref(null);
 
     const handleDataFetched = (data) => {
       excelData.value = data; // Update excelData with new fetched data
     };
 
+    const handleSharedCampaignId = (id) => {
+      campaignId.value = id;
+    }
+
     return {
       excelData,
+      campaignId,
       handleDataFetched,
+      handleSharedCampaignId,
     };
   },
 };

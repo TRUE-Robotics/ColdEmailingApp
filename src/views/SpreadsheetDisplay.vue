@@ -1,11 +1,25 @@
 <template>
   <v-container class="spreadsheet-container">
-    <h2>Spreadsheet Data</h2>
 
     <!-- Display log message for errors or information -->
-    <v-alert v-if="logMessage" type="info">
-      {{ logMessage }}
-    </v-alert>
+    <v-row>
+      <v-alert v-if="logMessage" type="info">
+        {{ logMessage }}
+      </v-alert>
+    </v-row>
+
+    <!-- Display log message for errors or information -->
+    <v-row justify="space-between">
+      <v-col>
+        <h2>Spreadsheet Data</h2>
+      </v-col>
+      <v-col>
+        <SpreadsheetControls
+        @pauseSchool="pauseSchool"
+        @resumeSchool="resumeSchool"
+        />
+      </v-col>
+    </v-row>
 
     <!-- Row of autocomplete inputs for filtering the first five columns -->
     <v-row>
@@ -40,7 +54,13 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from "vue";
+import SpreadsheetControls from "@/components/SpreadsheetControls.vue";
+import { ref, computed, onMounted, watch } from "vue";
+import {
+  listAllLeads,
+  pauseLead,
+  resumeLead,
+} from "@/utils/smartleadService";
 
 export default {
   name: "SpreadsheetDisplay",
@@ -50,11 +70,80 @@ export default {
       default: () => [],
       required: true,
     },
+    campaignId: {
+      type: Number
+    }
+  },
+  components: {
+    SpreadsheetControls
+  },
+  methods: {
+
+    // Pause a school
+    async pauseSchool() {
+      this.logMessage = null;
+      try {
+
+        if (!this.campaignId) {
+          this.logMessage = "Please select a campaign.";
+          return;
+        }
+
+        if (!this.selectedSchool) {
+          this.logMessage = "Please select a school.";
+          return;
+        }
+
+        const leadData = await listAllLeads(this.campaignId);
+        const filteredLeads = leadData.data.filter((lead) => lead.lead.company_name === this.selectedSchool);
+
+        for (const lead of filteredLeads) {
+          await pauseLead(this.campaignId, lead.lead.id);
+        }
+
+      } catch (error) {
+        this.logMessage = "Error Pausing School.";
+        console.error(error);
+      }
+    },
+
+    // Resume a school
+    async resumeSchool() {
+
+      this.logMessage = null;
+      try {
+
+        if (!this.campaignId) {
+          this.logMessage = "Please select a campaign.";
+          return;
+        }
+
+        console.log(this.selectedSchool)
+        if (!this.selectedSchool) {
+          this.logMessage = "Please select a school.";
+          return;
+        }
+
+        const leadData = await listAllLeads(this.campaignId);
+        const filteredLeads = leadData.data.filter((lead) => lead.lead.company_name === this.selectedSchool);
+
+        for (const lead of filteredLeads) {
+          await resumeLead(this.campaignId, lead.lead.id);
+        }
+
+      } catch (error) {
+        this.logMessage = "Error Resuming School.";
+        console.error(error);
+      }
+    },
+
   },
   setup(props) {
     const tableData = ref([]);
     const headers = ref([]);
     const logMessage = ref("");
+    const selectedSchool = ref(null);
+    const selectedPriority = ref(null);
 
     // Column filters for the first five headers
     const columnFilters = ref({});
@@ -79,6 +168,19 @@ export default {
       }
     });
 
+    // Watch for changes in spreadsheet
+    watch(
+      () => props.spreadsheetData,
+      (newData) => {
+        if (newData && newData.length > 0) {
+          tableData.value = newData;
+        } else {
+          logMessage.value = "No data available in the spreadsheet.";
+        }
+      },
+      {immediate: true }
+    )
+
     // Function to get unique values for a given column
     const getUniqueValues = (header) => {
       const values = tableData.value.map((item) => item[header]);
@@ -94,6 +196,8 @@ export default {
         return headers.value.slice(0, 5).every((header) => {
           const filterValue = columnFilters.value[header];
           if (!filterValue) return true;
+          if (header === 'School') selectedSchool.value = filterValue;
+          if (header === 'Priority') selectedPriority.value = filterValue;
           const cellValue = String(item[header]).toLowerCase();
           return cellValue.includes(String(filterValue).toLowerCase());
         });
@@ -114,6 +218,8 @@ export default {
       filteredData,
       tableHeaders,
       logMessage,
+      selectedSchool,
+      selectedPriority,
       headers,
       columnFilters,
       columnUniqueValues,

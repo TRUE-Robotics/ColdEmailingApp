@@ -69,6 +69,12 @@ import {
 } from "@/utils/smartleadService";
 
 export default {
+  props: {
+    campaignData: {
+      type: Array,
+      required: true,
+    },
+  },
   components: {
     LoggerControls,
     CampaignForm,
@@ -134,6 +140,7 @@ export default {
         if (sequence) {
           this.campaignCreated = true;
           this.campaignId = campaignId;
+          this.$emit('campaignId', this.campaignId);
           this.logMessage = `Using existing campaign with ID ${campaignId}-${this.campaignName}.`;
         } else {
           throw new Error("Invalid Campaign ID");
@@ -190,7 +197,7 @@ export default {
 
         this.logMessage = `Campaign created with ID ${this.campaignId} and leads added successfully.`;
         this.campaignCreated = true;
-        this.$emit("campaignCreated", this.campaignId);
+        this.$emit("campaignId", this.campaignId);
       } catch (error) {
         console.error("Error creating campaign or adding leads:", error);
         this.logMessage =

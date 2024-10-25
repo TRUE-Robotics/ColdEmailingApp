@@ -17,9 +17,9 @@
           </v-card-actions>
 
           <v-card-text>
-            <v-alert type="success">
+            <v-alert v-if="excelData" type="success">
               Excel Data Loaded Successfully! Excel changes will update every
-              15-30 seconds.
+              30-60 seconds.
             </v-alert>
           </v-card-text>
         </v-card>
